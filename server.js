@@ -1,17 +1,32 @@
 const express = require("express");
 const fs = require("fs");
+const os = require("os");
 const path = require("path");
+
+// Bundled seed data (always included by Vercel's file tracer)
+const seedItems = require("./data/items.json");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const IS_VERCEL = Boolean(process.env.VERCEL);
 
-// Where our saved lost & found items and images live
+const PUBLIC_DIR = path.join(__dirname, "public");
 const DATA_DIR = path.join(__dirname, "data");
-const DATA_FILE = path.join(DATA_DIR, "items.json");
-const IMAGES_DIR = path.join(__dirname, "images");
+const LOCAL_DATA_FILE = path.join(DATA_DIR, "items.json");
+const TMP_DATA_FILE = path.join(os.tmpdir(), "campus-lost-found-items.json");
 
 const VALID_TYPES = ["lost", "found"];
 const VALID_STATUSES = ["open", "returned"];
+
+// In-memory store seeded from data/items.json (safe fallback on read-only serverless filesystems)
+let memoryItems = cloneSeedItems();
+
+/**
+ * Create a fresh copy of the bundled sample items.
+ */
+function cloneSeedItems() {
+  return Array.isArray(seedItems) ? JSON.parse(JSON.stringify(seedItems)) : [];
+}
 
 // Allow Express to read JSON (including optional uploaded photo data URLs)
 app.use(express.json({ limit: "3mb" }));
@@ -25,38 +40,74 @@ app.use((err, req, res, next) => {
 });
 
 /**
- * Make sure the data folder and items.json file exist before reading or writing.
- */
-function ensureDataFileExists() {
-  if (!fs.existsSync(DATA_DIR)) {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
-  }
-
-  if (!fs.existsSync(DATA_FILE)) {
-    fs.writeFileSync(DATA_FILE, "[]", "utf8");
-  }
-}
-
-/**
- * Read all items from data/items.json.
+ * Read items safely:
+ * - On Vercel: reads from /tmp if present, otherwise uses the in-memory seed list.
+ * - Locally: reads from data/items.json (with fallback to in-memory if read-only).
  */
 function readItems() {
-  ensureDataFileExists();
-  const raw = fs.readFileSync(DATA_FILE, "utf8").trim();
-  if (!raw) {
-    return [];
+  if (IS_VERCEL) {
+    try {
+      if (fs.existsSync(TMP_DATA_FILE)) {
+        const raw = fs.readFileSync(TMP_DATA_FILE, "utf8").trim();
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) {
+            memoryItems = parsed;
+            return parsed;
+          }
+        }
+      }
+    } catch (error) {
+      console.warn("Could not read /tmp cache, using in-memory items:", error.message);
+    }
+    return [...memoryItems];
   }
 
-  const parsed = JSON.parse(raw);
-  return Array.isArray(parsed) ? parsed : [];
+  try {
+    if (!fs.existsSync(LOCAL_DATA_FILE)) {
+      return [...memoryItems];
+    }
+    const raw = fs.readFileSync(LOCAL_DATA_FILE, "utf8").trim();
+    if (!raw) {
+      return [];
+    }
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) {
+      memoryItems = parsed;
+      return parsed;
+    }
+  } catch (error) {
+    console.warn("Could not read local items.json, using in-memory items:", error.message);
+  }
+
+  return [...memoryItems];
 }
 
 /**
- * Save all items back into data/items.json.
+ * Save items safely without crashing on read-only deployment filesystems:
+ * - On Vercel: updates in-memory store and /tmp (temporary per warm instance).
+ * - Locally: writes to data/items.json (and falls back to memory if filesystem is read-only).
  */
 function writeItems(items) {
-  ensureDataFileExists();
-  fs.writeFileSync(DATA_FILE, JSON.stringify(items, null, 2), "utf8");
+  memoryItems = Array.isArray(items) ? items : [];
+
+  if (IS_VERCEL) {
+    try {
+      fs.writeFileSync(TMP_DATA_FILE, JSON.stringify(memoryItems, null, 2), "utf8");
+    } catch (error) {
+      console.warn("Could not write /tmp cache, kept in memory:", error.message);
+    }
+    return;
+  }
+
+  try {
+    if (!fs.existsSync(DATA_DIR)) {
+      fs.mkdirSync(DATA_DIR, { recursive: true });
+    }
+    fs.writeFileSync(LOCAL_DATA_FILE, JSON.stringify(memoryItems, null, 2), "utf8");
+  } catch (error) {
+    console.warn("Local data directory is not writable, kept in memory:", error.message);
+  }
 }
 
 /**
@@ -123,21 +174,20 @@ function validateItemInput(body) {
   };
 }
 
-// Serve only our frontend files and images folder (keeps server.js and data/items.json private)
-app.use("/images", express.static(IMAGES_DIR));
+// Serve static assets from public/ in local development (Vercel CDN serves public/ directly in production)
+if (!IS_VERCEL) {
+  app.use(express.static(PUBLIC_DIR));
+}
+
 app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "index.html"));
+  const indexPath = path.join(PUBLIC_DIR, "index.html");
+  if (fs.existsSync(indexPath)) {
+    return res.sendFile(indexPath);
+  }
+  return res.status(404).send("Homepage not found.");
 });
 
-app.get("/styles.css", (req, res) => {
-  res.sendFile(path.join(__dirname, "styles.css"));
-});
-
-app.get("/app.js", (req, res) => {
-  res.sendFile(path.join(__dirname, "app.js"));
-});
-
-// GET /api/items — Return all items (supports optional ?type=lost|found and ?search=...)
+// GET /api/items — Return all items (supports optional ?type=, ?category=, ?status=, and ?search=)
 app.get("/api/items", (req, res) => {
   try {
     let items = readItems();
@@ -147,7 +197,6 @@ app.get("/api/items", (req, res) => {
     const statusFilter = typeof req.query.status === "string" ? req.query.status.trim().toLowerCase() : "";
     const searchFilter = typeof req.query.search === "string" ? req.query.search.trim().toLowerCase() : "";
 
-    // Normalize missing status on older records to "open"
     items = items.map((item) => ({
       ...item,
       status: VALID_STATUSES.includes(item.status) ? item.status : "open",
@@ -174,7 +223,6 @@ app.get("/api/items", (req, res) => {
       });
     }
 
-    // Show newest posts at the top
     items.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
     res.json({ items });
@@ -331,8 +379,12 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: "Something went wrong on the server." });
 });
 
-ensureDataFileExists();
+// Only start listening on a port when run directly locally (e.g., `node server.js`)
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`Campus Lost & Found Portal is running at http://localhost:${PORT}`);
+  });
+}
 
-app.listen(PORT, () => {
-  console.log(`Campus Lost & Found Portal is running at http://localhost:${PORT}`);
-});
+// Export the Express app for Vercel serverless deployment
+module.exports = app;
