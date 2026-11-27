@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Campus Lost &amp; Found Portal</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <!-- Header Navigation -->
+  <header class="site-header">
+    <div class="container header-inner">
+      <a href="#top" class="brand" aria-label="Campus Lost and Found Home">
+        <span class="brand-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="7"></circle>
+            <path d="M21 21l-4.35-4.35"></path>
+            <path d="M11 8v6M8 11h6"></path>
+          </svg>
+        </span>
+        <span class="brand-text">
+          <strong>Campus Lost &amp; Found</strong>
+          <small>Student Community Portal</small>
+        </span>
+      </a>
+
+      <nav class="main-nav" aria-label="Primary Navigation">
+        <a href="#browse-section" class="nav-link">Browse Items</a>
+        <a href="#report-section" class="nav-link nav-link-cta">Report an Item</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="top">
+    <!-- Colorful Hero Section with Campus Illustration -->
+    <section class="hero-section">
+      <div class="container hero-grid">
+        <div class="hero-content">
+          <span class="hero-badge">Campus Lost &amp; Found Portal</span>
+          <h1>Lost something on campus? Let&rsquo;s help it find its way back.</h1>
+          <p class="hero-subtitle">
+            Browse photos of items found around campus, search by building or category, report a lost or found belonging, and contact the poster in one click.
+          </p>
+
+          <div class="hero-actions">
+            <button type="button" id="find-item-btn" class="btn btn-accent btn-lg">
+              <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="11" cy="11" r="8"></circle>
+                <path d="M21 21l-4.35-4.35"></path>
+              </svg>
+              Find an Item
+            </button>
+
+            <button type="button" id="report-item-btn" class="btn btn-light btn-lg">
+              <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M12 5v14M5 12h14"></path>
+              </svg>
+              Report an Item
+            </button>
+          </div>
+        </div>
+
+        <div class="hero-media">
+          <img
+            src="/images/hero-campus.jpg"
+            alt="College students helping each other find lost campus belongings"
+            class="hero-image"
+          />
+        </div>
+      </div>
+    </section>
+
+    <!-- Browse Items Section -->
+    <section id="browse-section" class="section browse-section">
+      <div class="container">
+        <div class="section-header">
+          <div>
+            <h2>Browse Lost &amp; Found Items</h2>
+            <p class="section-subtitle">Search by item name, category, or location and contact the poster directly.</p>
+          </div>
+          <span id="items-count" class="count-pill">Loading items...</span>
+        </div>
+
+        <!-- Search and Filter Controls -->
+        <div class="browse-controls">
+          <div class="search-wrapper">
+            <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="11" cy="11" r="8"></circle>
+              <path d="M21 21l-4.35-4.35"></path>
+            </svg>
+            <input
+              type="search"
+              id="search-input"
+              class="search-input"
+              placeholder="Search by item name, category, or location (e.g., Library, Wallet)..."
+              aria-label="Search by item name, category, or location"
+            />
+            <button
+              type="button"
+              id="clear-search-btn"
+              class="clear-search-btn hidden"
+              aria-label="Clear search"
+              title="Clear search"
+            >
+              &times;
+            </button>
+          </div>
+
+          <div class="filter-controls">
+            <select id="category-filter" class="category-select" aria-label="Filter items by category">
+              <option value="all">All Categories</option>
+              <option value="Electronics">Electronics</option>
+              <option value="ID Cards &amp; Wallets">ID Cards &amp; Wallets</option>
+              <option value="Books &amp; Notes">Books &amp; Notes</option>
+              <option value="Keys">Keys</option>
+              <option value="Accessories">Accessories</option>
+              <option value="Clothing">Clothing</option>
+              <option value="Other">Other</option>
+            </select>
+
+            <div class="filter-group" role="group" aria-label="Filter items by type">
+              <button type="button" class="filter-btn active" data-filter="all" aria-pressed="true">
+                All Items
+              </button>
+              <button type="button" class="filter-btn" data-filter="lost" aria-pressed="false">
+                Lost Items
+              </button>
+              <button type="button" class="filter-btn" data-filter="found" aria-pressed="false">
+                Found Items
+              </button>
+            </div>
+
+            <select id="sort-select" class="category-select" aria-label="Sort items">
+              <option value="newest">Newest First</option>
+              <option value="oldest">Oldest First</option>
+            </select>
+
+            <label class="toggle-pill">
+              <input type="checkbox" id="hide-returned-toggle" />
+              <span>Hide Returned</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Quick Campus Location Filter Chips -->
+        <div class="location-chips-bar" aria-label="Quick campus location search">
+          <span class="chips-label">Popular spots:</span>
+          <div id="location-chips" class="location-chips">
+            <button type="button" class="location-chip" data-location="Main Library">Main Library</button>
+            <button type="button" class="location-chip" data-location="Cafeteria">Cafeteria</button>
+            <button type="button" class="location-chip" data-location="BBA Block">BBA Block</button>
+            <button type="button" class="location-chip" data-location="Computer Lab">Computer Lab</button>
+            <button type="button" class="location-chip" data-location="Parking Lot">Parking Lot</button>
+            <button type="button" class="location-chip" data-location="Sports Complex">Sports Complex</button>
+          </div>
+        </div>
+
+        <!-- Loading / Error Banner -->
+        <div id="browse-feedback" class="feedback-banner hidden" role="status" aria-live="polite">
+          <span id="browse-feedback-text"></span>
+          <button type="button" id="retry-fetch-btn" class="btn btn-small hidden">Try Again</button>
+        </div>
+
+        <!-- Item Cards Grid -->
+        <div id="items-grid" class="items-grid" aria-live="polite"></div>
+
+        <!-- Empty State -->
+        <div id="empty-state" class="empty-state hidden">
+          <div class="empty-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"></circle>
+              <path d="M21 21l-4.35-4.35"></path>
+            </svg>
+          </div>
+          <h3>No matching items found</h3>
+          <p id="empty-state-message">Try another keyword or clear your filters to see all posted items.</p>
+          <button type="button" id="reset-filters-btn" class="btn btn-secondary">
+            Show All Items
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Report an Item Form Section -->
+    <section id="report-section" class="section report-section">
+      <div class="container report-container">
+        <div class="section-header centered">
+          <div>
+            <h2>Report a Lost or Found Item</h2>
+            <p class="section-subtitle">
+              Fill out this quick form so fellow students can recognize the item and reach out to you.
+            </p>
+          </div>
+        </div>
+
+        <form id="report-form" class="report-form" novalidate>
+          <!-- Success / Error Message Banner -->
+          <div id="form-feedback" class="feedback-banner hidden" role="alert" aria-live="polite"></div>
+
+          <!-- Item Type (Lost or Found) -->
+          <fieldset class="form-group">
+            <legend class="form-label">Item Type <span class="required">*</span></legend>
+            <div class="type-options">
+              <label class="type-card type-card-lost">
+                <input type="radio" name="type" value="lost" checked />
+                <span class="type-card-body">
+                  <span class="type-dot type-dot-lost" aria-hidden="true"></span>
+                  <span>
+                    <strong>Lost Item</strong>
+                    <small>I lost this on campus</small>
+                  </span>
+                </span>
+              </label>
+
+              <label class="type-card type-card-found">
+                <input type="radio" name="type" value="found" />
+                <span class="type-card-body">
+                  <span class="type-dot type-dot-found" aria-hidden="true"></span>
+                  <span>
+                    <strong>Found Item</strong>
+                    <small>I found someone&rsquo;s item</small>
+                  </span>
+                </span>
+              </label>
+            </div>
+            <p class="field-error" id="error-type"></p>
+          </fieldset>
+
+          <div class="form-grid">
+            <!-- Item Name -->
+            <div class="form-group">
+              <label for="item-name" class="form-label">Item Name <span class="required">*</span></label>
+              <input
+                type="text"
+                id="item-name"
+                name="name"
+                class="form-control"
+                maxlength="80"
+                placeholder="e.g., Black Leather Wallet"
+                required
+              />
+              <p class="field-error" id="error-name"></p>
+            </div>
+
+            <!-- Category -->
+            <div class="form-group">
+              <label for="item-category" class="form-label">Category <span class="required">*</span></label>
+              <select id="item-category" name="category" class="form-control" required>
+                <option value="">Select a category</option>
+                <option value="Electronics">Electronics</option>
+                <option value="ID Cards &amp; Wallets">ID Cards &amp; Wallets</option>
+                <option value="Books &amp; Notes">Books &amp; Notes</option>
+                <option value="Keys">Keys</option>
+                <option value="Accessories">Accessories</option>
+                <option value="Clothing">Clothing</option>
+                <option value="Other">Other</option>
+              </select>
+              <p class="field-error" id="error-category"></p>
+            </div>
+
+            <!-- Location -->
+            <div class="form-group">
+              <label for="item-location" class="form-label">Campus Location <span class="required">*</span></label>
+              <input
+                type="text"
+                id="item-location"
+                name="location"
+                class="form-control"
+                maxlength="80"
+                placeholder="e.g., Main Library, 2nd Floor"
+                required
+              />
+              <p class="field-error" id="error-location"></p>
+            </div>
+
+            <!-- Contact Details -->
+            <div class="form-group">
+              <label for="item-contact" class="form-label">Contact Details <span class="required">*</span></label>
+              <input
+                type="text"
+                id="item-contact"
+                name="contact"
+                class="form-control"
+                maxlength="100"
+                placeholder="e.g., name@college.edu or 98765-43210"
+                required
+              />
+              <p class="field-error" id="error-contact"></p>
+            </div>
+          </div>
+
+          <!-- Optional Photo Upload -->
+          <div class="form-group">
+            <label for="item-image" class="form-label">Item Photo <span class="optional-tag">(Optional)</span></label>
+            <div class="upload-box">
+              <input
+                type="file"
+                id="item-image"
+                name="image"
+                class="file-input"
+                accept="image/png, image/jpeg, image/webp, image/gif"
+              />
+              <small class="upload-hint">Upload a clear photo (under 1.8 MB), or leave blank to use a colorful category image.</small>
+            </div>
+            <div id="image-preview-box" class="image-preview-box hidden">
+              <img id="image-preview" src="" alt="Selected item preview" class="image-preview" />
+              <button type="button" id="remove-image-btn" class="btn btn-small btn-secondary">Remove Photo</button>
+            </div>
+            <p class="field-error" id="error-image"></p>
+          </div>
+
+          <!-- Description -->
+          <div class="form-group">
+            <div class="label-row">
+              <label for="item-description" class="form-label">Description <span class="required">*</span></label>
+              <span id="char-count" class="char-count">0 / 400</span>
+            </div>
+            <textarea
+              id="item-description"
+              name="description"
+              class="form-control form-textarea"
+              rows="3"
+              maxlength="400"
+              placeholder="Mention color, brand, stickers, or approximate time so the item is easy to recognize..."
+              required
+            ></textarea>
+            <p class="field-error" id="error-description"></p>
+          </div>
+
+          <!-- Submit Button -->
+          <div class="form-actions">
+            <button type="submit" id="submit-btn" class="btn btn-primary btn-lg btn-submit">
+              Post Item
+            </button>
+          </div>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <p><strong>Campus Lost &amp; Found Portal</strong></p>
+      <p class="footer-note">Built for college students to find and return lost belongings.</p>
+    </div>
+  </footer>
+
+  <!-- Item Details Popup Modal -->
+  <div id="item-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div id="modal-backdrop" class="modal-backdrop"></div>
+    <div class="modal-dialog">
+      <button type="button" id="modal-close-btn" class="modal-close-btn" aria-label="Close item details">&times;</button>
+
+      <div class="modal-media">
+        <img id="modal-image" src="" alt="" class="modal-image" />
+        <span id="modal-status-badge" class="status-badge"></span>
+        <span id="modal-returned-badge" class="returned-badge hidden">Returned</span>
+      </div>
+
+      <div class="modal-body">
+        <div id="modal-view-pane">
+          <div class="card-top">
+            <span id="modal-category-badge" class="category-badge"></span>
+            <span id="modal-date" class="item-date"></span>
+          </div>
+
+          <h3 id="modal-title" class="modal-title"></h3>
+          <p id="modal-description" class="modal-description"></p>
+
+          <div class="modal-meta">
+            <p><strong>Location:</strong> <span id="modal-location"></span></p>
+            <p><strong>Contact:</strong> <span id="modal-contact"></span></p>
+          </div>
+
+          <div id="modal-delete-confirm" class="modal-delete-box hidden">
+            <p>Delete this post permanently? This cannot be undone.</p>
+            <div class="modal-actions">
+              <button type="button" id="confirm-delete-btn" class="btn btn-small danger-btn">Yes, Delete</button>
+              <button type="button" id="cancel-delete-btn" class="btn btn-small btn-secondary">Cancel</button>
+            </div>
+          </div>
+
+          <div id="modal-actions" class="modal-actions"></div>
+        </div>
+
+        <!-- Inline Edit Form inside Modal -->
+        <form id="modal-edit-form" class="modal-edit-form hidden" novalidate>
+          <h3 class="modal-title">Edit Item Details</h3>
+          <div id="modal-edit-error" class="feedback-banner error hidden" role="alert"></div>
+
+          <div class="form-group">
+            <label for="edit-type" class="form-label">Item Type</label>
+            <select id="edit-type" class="form-control">
+              <option value="lost">Lost Item</option>
+              <option value="found">Found Item</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="edit-name" class="form-label">Item Name</label>
+            <input type="text" id="edit-name" class="form-control" maxlength="80" required />
+          </div>
+
+          <div class="form-group">
+            <label for="edit-category" class="form-label">Category</label>
+            <select id="edit-category" class="form-control" required>
+              <option value="Electronics">Electronics</option>
+              <option value="ID Cards &amp; Wallets">ID Cards &amp; Wallets</option>
+              <option value="Books &amp; Notes">Books &amp; Notes</option>
+              <option value="Keys">Keys</option>
+              <option value="Accessories">Accessories</option>
+              <option value="Clothing">Clothing</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="edit-location" class="form-label">Campus Location</label>
+            <input type="text" id="edit-location" class="form-control" maxlength="80" required />
+          </div>
+
+          <div class="form-group">
+            <label for="edit-contact" class="form-label">Contact Details</label>
+            <input type="text" id="edit-contact" class="form-control" maxlength="100" required />
+          </div>
+
+          <div class="form-group">
+            <label for="edit-description" class="form-label">Description</label>
+            <textarea id="edit-description" class="form-control form-textarea" rows="3" maxlength="400" required></textarea>
+          </div>
+
+          <div class="modal-actions">
+            <button type="submit" id="save-edit-btn" class="btn btn-primary btn-small">Save Changes</button>
+            <button type="button" id="cancel-edit-btn" class="btn btn-secondary btn-small">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script src="/app.js" defer></script>
+</body>
+</html>
